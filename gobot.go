@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/bluesky-social/indigo/api/atproto"
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
@@ -116,6 +118,9 @@ func (c *BskyAgent) PostToFeed(ctx context.Context, post appbsky.FeedPost) (stri
 }
 
 func getImageAsBuffer(imageURL string) ([]byte, error) {
+	if !strings.HasPrefix(imageURL, "http://") && !strings.HasPrefix(imageURL, "https://") {
+		return os.ReadFile(imageURL[len("file://"):])
+	}
 	// Fetch image
 	response, err := http.Get(imageURL)
 	if err != nil {
@@ -129,7 +134,7 @@ func getImageAsBuffer(imageURL string) ([]byte, error) {
 	}
 
 	// Read response body
-	imageData, err := ioutil.ReadAll(response.Body)
+	imageData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
